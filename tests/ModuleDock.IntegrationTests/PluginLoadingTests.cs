@@ -240,6 +240,84 @@ public sealed class PluginLoadingTests
         context.LoadUnmanagedDllForTests("moduledock-missing-native-library").Should().Be(nint.Zero);
     }
 
+    [Fact]
+    public void PrivateFrameworkDependency_LoadsFromThePluginWhenTheHostLacksIt()
+    {
+        // The assertion below is only meaningful while the host itself cannot supply
+        // this assembly, so the precondition is checked explicitly.
+        var hostHasObjectPool = AppDomain.CurrentDomain.GetAssemblies()
+            .Any(static assembly => assembly.GetName().Name == "Microsoft.Extensions.ObjectPool");
+        hostHasObjectPool.Should().BeFalse("the fixture relies on the host not referencing ObjectPool");
+
+        using var temp = new TempDirectory();
+        temp.AddPublishedPlugin("PrivateFrameworkPlugin", "private-framework");
+        var services = CreateServices(temp.Path);
+
+        using var provider = services.BuildServiceProvider();
+        var calculator = provider.GetRequiredKeyedService<ITestCalculator>("private-framework");
+        calculator.GetPrivateDependencyVersion().Should().Be("Microsoft.Extensions.ObjectPool");
+    }
+
+    [Fact]
+    public void DestructiveRegistration_RestoresHostServices()
+    {
+        using var temp = new TempDirectory();
+        temp.AddPublishedPlugin("DestructiveRegistrationPlugin", "destructive");
+
+        var services = new ServiceCollection();
+        services.AddSingleton(new HostMarker());
+        var before = services.Count;
+
+        services.AddModuleDock(options =>
+        {
+            options.PluginDirectory = temp.Path;
+            options.ContractVersion = "1.0.0";
+            options.FailurePolicy = PluginFailurePolicy.SkipInvalid;
+            options.ShareAssemblyContaining<ITestCalculator>();
+        });
+
+        // The plugin cleared the collection before throwing, so anything registered by
+        // the host must have been put back.
+        services.Count.Should().BeGreaterThanOrEqualTo(before);
+        using var provider = services.BuildServiceProvider();
+        provider.GetService<HostMarker>().Should().NotBeNull();
+        provider.GetRequiredService<IPluginCatalog>().Plugins.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void NestedEntryAssembly_IsRecordedRelativeToThePluginDirectory()
+    {
+        using var temp = new TempDirectory();
+        var directory = temp.AddPublishedPlugin("ValidPlugin", "valid-plugin");
+        var nested = Path.Combine(directory, "bin");
+        Directory.CreateDirectory(nested);
+        foreach (var file in Directory.GetFiles(directory, "ValidPlugin.*"))
+        {
+            File.Move(file, Path.Combine(nested, Path.GetFileName(file)));
+        }
+
+        File.WriteAllText(
+            Path.Combine(directory, "plugin.json"),
+            """
+            {
+              "id": "valid-plugin",
+              "version": "1.0.0",
+              "entryAssembly": "bin/ValidPlugin.dll",
+              "contractVersion": "1.0.0",
+              "capabilities": ["valid"]
+            }
+            """);
+
+        var services = CreateServices(temp.Path);
+        using var provider = services.BuildServiceProvider();
+        var descriptor = provider.GetRequiredService<IPluginCatalog>().FindById("valid-plugin");
+
+        descriptor.Should().NotBeNull();
+        File.Exists(Path.Combine(descriptor!.Directory, descriptor.EntryAssembly)).Should().BeTrue();
+    }
+
+    private sealed class HostMarker;
+
     private static ServiceCollection CreateServices(
         string pluginDirectory,
         PluginFailurePolicy failurePolicy = PluginFailurePolicy.FailFast)

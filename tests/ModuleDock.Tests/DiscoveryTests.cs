@@ -150,7 +150,7 @@ public sealed class DiscoveryTests
                 entryAssembly: "Checksum.dll",
                 checksum: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"));
         File.WriteAllBytes(Path.Combine(directory, "Checksum.dll"), [1, 2, 3]);
-        File.WriteAllText(Path.Combine(directory, "Checksum.deps.json"), "{}");
+        File.WriteAllText(Path.Combine(directory, "Checksum.deps.json"), TestJson.Deps);
 
         AssertDiagnostic(temp.Path, PluginDiagnosticCode.ChecksumMismatch);
     }
@@ -166,9 +166,101 @@ public sealed class DiscoveryTests
                 entryAssembly: "Checksum.dll",
                 checksum: "not-hex"));
         File.WriteAllBytes(Path.Combine(directory, "Checksum.dll"), [1, 2, 3]);
-        File.WriteAllText(Path.Combine(directory, "Checksum.deps.json"), "{}");
+        File.WriteAllText(Path.Combine(directory, "Checksum.deps.json"), TestJson.Deps);
 
         AssertDiagnostic(temp.Path, PluginDiagnosticCode.InvalidChecksum);
+    }
+
+    [Fact]
+    public void AddModuleDock_UppercaseChecksumPrefix_IsAccepted()
+    {
+        using var temp = new TempDirectory();
+        var content = new byte[] { 1, 2, 3 };
+        var hash = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(content));
+        var directory = temp.WriteManifest(
+            "checksum",
+            TestJson.Manifest(
+                id: "checksum-plugin",
+                entryAssembly: "Checksum.dll",
+                checksum: $"SHA256:{hash}"));
+        File.WriteAllBytes(Path.Combine(directory, "Checksum.dll"), content);
+        File.WriteAllText(Path.Combine(directory, "Checksum.deps.json"), TestJson.Deps);
+
+        // The checksum is valid, so the load must progress past validation and fail
+        // only because the placeholder file is not a real assembly.
+        AssertDiagnostic(temp.Path, PluginDiagnosticCode.PluginLoadFailed);
+    }
+
+    [Fact]
+    public void AddModuleDock_MalformedDependencyMetadata_IsReportedWithoutCrashing()
+    {
+        using var temp = new TempDirectory();
+        var directory = temp.WriteManifest(
+            "bad-deps",
+            TestJson.Manifest(id: "bad-deps-plugin", entryAssembly: "BadDeps.dll"));
+        File.WriteAllBytes(Path.Combine(directory, "BadDeps.dll"), [0]);
+
+        // A dependency file without runtimeTarget terminates the process inside
+        // AssemblyDependencyResolver, so it must never reach the resolver.
+        File.WriteAllText(Path.Combine(directory, "BadDeps.deps.json"), "{}");
+
+        AssertDiagnostic(temp.Path, PluginDiagnosticCode.MalformedDependencyMetadata);
+    }
+
+    [Fact]
+    public void AddModuleDock_NestedEntryAssembly_ResolvesInsideTheSubdirectory()
+    {
+        using var temp = new TempDirectory();
+        var directory = temp.WriteManifest(
+            "nested",
+            TestJson.Manifest(id: "nested-plugin", entryAssembly: "bin/Nested.dll"));
+        Directory.CreateDirectory(Path.Combine(directory, "bin"));
+        File.WriteAllBytes(Path.Combine(directory, "bin", "Nested.dll"), [0]);
+        File.WriteAllText(Path.Combine(directory, "bin", "Nested.deps.json"), TestJson.Deps);
+
+        // Reaching the load stage proves the nested path resolved and stayed inside
+        // the plugin directory; the placeholder file cannot be a real assembly.
+        AssertDiagnostic(temp.Path, PluginDiagnosticCode.PluginLoadFailed);
+    }
+
+    [Fact]
+    public void AddModuleDock_UnreadablePluginDirectory_IsReported()
+    {
+        if (OperatingSystem.IsWindows())
+        {
+            return;
+        }
+
+        using var temp = new TempDirectory();
+        var directory = temp.CreatePluginDirectory("locked");
+        File.SetUnixFileMode(directory, UnixFileMode.None);
+
+        try
+        {
+            AssertDiagnostic(temp.Path, PluginDiagnosticCode.PluginDirectoryUnreadable);
+        }
+        finally
+        {
+            File.SetUnixFileMode(
+                directory,
+                UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute);
+        }
+    }
+
+    [Fact]
+    public void AddModuleDock_UndefinedFailurePolicy_Throws()
+    {
+        using var temp = new TempDirectory();
+        var services = new ServiceCollection();
+
+        var act = () => services.AddModuleDock(options =>
+        {
+            options.PluginDirectory = temp.Path;
+            options.ContractVersion = "1.0.0";
+            options.FailurePolicy = (PluginFailurePolicy)123;
+        });
+
+        act.Should().Throw<ArgumentException>();
     }
 
     [Fact]
@@ -319,5 +411,62 @@ public sealed class CatalogueTests
         ((System.Collections.IList)catalog.Plugins).IsReadOnly.Should().BeTrue();
         ((System.Collections.IList)catalog.LoadReport.Loaded).IsReadOnly.Should().BeTrue();
         ((System.Collections.IList)catalog.LoadReport.Diagnostics).IsReadOnly.Should().BeTrue();
+    }
+
+    [Fact]
+    public void PluginDescriptor_DoesNotTrackLaterChangesToTheSuppliedCapabilities()
+    {
+        var capabilities = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "marine" };
+        var descriptor = new PluginDescriptor(
+            "marine-rating",
+            "1.0.0",
+            "1.0.0",
+            capabilities,
+            "/plugins/marine-rating",
+            "MarineRating.Plugin.dll");
+
+        capabilities.Add("aviation");
+
+        descriptor.Capabilities.Should().ContainSingle().Which.Should().Be("marine");
+    }
+
+    [Fact]
+    public void PluginContext_DoesNotTrackLaterChangesToTheSuppliedCapabilities()
+    {
+        var capabilities = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "marine" };
+        var context = new PluginContext(
+            "marine-rating",
+            "1.0.0",
+            "1.0.0",
+            capabilities,
+            "/plugins/marine-rating");
+
+        capabilities.Add("aviation");
+
+        context.Capabilities.Should().ContainSingle().Which.Should().Be("marine");
+    }
+
+    [Fact]
+    public void PluginManifest_DoesNotTrackLaterChangesToTheSuppliedCapabilities()
+    {
+        var capabilities = new List<string> { "marine" };
+        var manifest = new PluginManifest(
+            "marine-rating",
+            "1.0.0",
+            "MarineRating.Plugin.dll",
+            "1.0.0",
+            capabilities);
+
+        capabilities.Add("aviation");
+
+        manifest.Capabilities.Should().ContainSingle().Which.Should().Be("marine");
+    }
+
+    [Fact]
+    public void PluginValidationException_NullDiagnostics_ThrowsArgumentNullException()
+    {
+        var act = () => new PluginValidationException("failed", null!);
+
+        act.Should().Throw<ArgumentNullException>();
     }
 }

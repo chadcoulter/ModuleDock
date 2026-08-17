@@ -9,7 +9,7 @@ internal static class SharedAssemblyNames
     {
         ArgumentNullException.ThrowIfNull(options);
 
-        var names = new HashSet<string>(StringComparer.Ordinal)
+        var names = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
         {
             typeof(IPluginModule).Assembly.GetName().Name!
         };

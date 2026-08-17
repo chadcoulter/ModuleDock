@@ -69,5 +69,11 @@ public enum PluginDiagnosticCode
     PluginLoadFailed = 21,
 
     /// <summary>A plugin directory advertised the same capability more than once.</summary>
-    DuplicateCapabilityInManifest = 22
+    DuplicateCapabilityInManifest = 22,
+
+    /// <summary>A plugin directory or file could not be read.</summary>
+    PluginDirectoryUnreadable = 23,
+
+    /// <summary>The plugin's <c>.deps.json</c> file is present but not usable.</summary>
+    MalformedDependencyMetadata = 24
 }

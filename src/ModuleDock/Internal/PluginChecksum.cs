@@ -9,7 +9,7 @@ internal static class PluginChecksum
 {
     private static readonly Regex _hexSha256 = new(
         "^(?:sha256:)?[0-9a-fA-F]{64}$",
-        RegexOptions.CultureInvariant | RegexOptions.Compiled);
+        RegexOptions.CultureInvariant | RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
     public static bool IsWellFormed(string checksum) => _hexSha256.IsMatch(checksum.Trim());
 

@@ -1,0 +1,9 @@
+{
+  "id": "destructive-registration-plugin",
+  "version": "1.0.0",
+  "entryAssembly": "DestructiveRegistrationPlugin.dll",
+  "contractVersion": "1.0.0",
+  "capabilities": [
+    "destructive-registration"
+  ]
+}

@@ -1,0 +1,9 @@
+{
+  "id": "private-framework-plugin",
+  "version": "1.0.0",
+  "entryAssembly": "PrivateFrameworkPlugin.dll",
+  "contractVersion": "1.0.0",
+  "capabilities": [
+    "private-framework"
+  ]
+}

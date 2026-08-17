@@ -47,6 +47,20 @@ internal sealed class TempDirectory : IDisposable
 
 internal static class TestJson
 {
+    /// <summary>
+    /// A dependency file with the shape hostpolicy requires. Anything less complete
+    /// terminates the process when AssemblyDependencyResolver reads it.
+    /// </summary>
+    public const string Deps = """
+        {
+          "runtimeTarget": { "name": ".NETCoreApp,Version=v10.0", "signature": "" },
+          "compilationOptions": {},
+          "targets": { ".NETCoreApp,Version=v10.0": {} },
+          "libraries": {}
+        }
+        """;
+
+
     public static string Manifest(
         string id = "sample-plugin",
         string version = "1.0.0",

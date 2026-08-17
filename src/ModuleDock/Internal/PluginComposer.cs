@@ -37,9 +37,9 @@ internal static class PluginComposer
                 "The configured plugin directory does not exist.",
                 pluginPath: pluginRoot));
         }
-        else
+        else if (TryEnumeratePluginDirectories(pluginRoot, diagnostics, innerExceptions, out var directories))
         {
-            foreach (var directory in EnumeratePluginDirectories(pluginRoot))
+            foreach (var directory in directories)
             {
                 if (TryCreateCandidate(
                     directory,
@@ -57,11 +57,11 @@ internal static class PluginComposer
 
         var accepted = ExcludeDuplicates(candidates, diagnostics);
         var loaded = new List<PluginDescriptor>(accepted.Count);
-        var registrationStart = services.Count;
+        var registrationSnapshot = services.ToArray();
 
         foreach (var candidate in accepted)
         {
-            var pluginStart = services.Count;
+            var pluginSnapshot = services.ToArray();
             try
             {
                 candidate.Module.ConfigureServices(services, candidate.Context);
@@ -70,7 +70,7 @@ internal static class PluginComposer
             catch (Exception exception)
             {
                 innerExceptions.Add(Unwrap(exception));
-                Rollback(services, pluginStart);
+                Restore(services, pluginSnapshot);
                 diagnostics.Add(new PluginDiagnostic(
                     PluginDiagnosticCode.ServiceRegistrationFailed,
                     string.Format(
@@ -91,7 +91,7 @@ internal static class PluginComposer
 
         if (options.FailurePolicy == PluginFailurePolicy.FailFast && diagnostics.Count > 0)
         {
-            Rollback(services, registrationStart);
+            Restore(services, registrationSnapshot);
             throw CreateValidationException(diagnostics, report, innerExceptions);
         }
 
@@ -112,16 +112,47 @@ internal static class PluginComposer
                 "ContractVersion must be a valid version such as 1.0.0.",
                 nameof(options));
         }
+
+        if (!Enum.IsDefined(options.FailurePolicy))
+        {
+            throw new ArgumentException(
+                "FailurePolicy must be FailFast or SkipInvalid.",
+                nameof(options));
+        }
     }
 
-    private static IEnumerable<string> EnumeratePluginDirectories(string pluginRoot) =>
-        Directory.GetDirectories(pluginRoot)
-            .Where(static directory =>
-            {
-                var name = Path.GetFileName(directory);
-                return !string.IsNullOrEmpty(name) && !name.StartsWith('.');
-            })
-            .OrderBy(static directory => Path.GetFileName(directory), StringComparer.OrdinalIgnoreCase);
+    private static bool TryEnumeratePluginDirectories(
+        string pluginRoot,
+        List<PluginDiagnostic> diagnostics,
+        List<Exception> innerExceptions,
+        [NotNullWhen(true)] out IReadOnlyList<string>? directories)
+    {
+        try
+        {
+            directories = [.. Directory.GetDirectories(pluginRoot)
+                .Where(static directory =>
+                {
+                    var name = Path.GetFileName(directory);
+                    return !string.IsNullOrEmpty(name) && !name.StartsWith('.');
+                })
+                .OrderBy(static directory => Path.GetFileName(directory), StringComparer.OrdinalIgnoreCase)
+                .ThenBy(static directory => Path.GetFileName(directory), StringComparer.Ordinal)];
+            return true;
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+        {
+            innerExceptions.Add(exception);
+            diagnostics.Add(new PluginDiagnostic(
+                PluginDiagnosticCode.PluginDirectoryUnreadable,
+                string.Format(
+                    CultureInfo.InvariantCulture,
+                    "The plugin directory could not be read ({0}).",
+                    exception.GetType().Name),
+                pluginPath: pluginRoot));
+            directories = null;
+            return false;
+        }
+    }
 
     [RequiresUnreferencedCode(TrimmingMessages.Discovery)]
     [RequiresDynamicCode(TrimmingMessages.Discovery)]
@@ -135,7 +166,24 @@ internal static class PluginComposer
         [NotNullWhen(true)] out LoadedCandidate? candidate)
     {
         candidate = null;
-        var manifestPath = FindManifestPath(pluginDirectory);
+        string? manifestPath;
+        try
+        {
+            manifestPath = FindManifestPath(pluginDirectory);
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+        {
+            innerExceptions.Add(exception);
+            diagnostics.Add(new PluginDiagnostic(
+                PluginDiagnosticCode.PluginDirectoryUnreadable,
+                string.Format(
+                    CultureInfo.InvariantCulture,
+                    "The plugin directory could not be read ({0}).",
+                    exception.GetType().Name),
+                pluginPath: pluginDirectory));
+            return false;
+        }
+
         if (manifestPath is null)
         {
             diagnostics.Add(new PluginDiagnostic(
@@ -161,25 +209,54 @@ internal static class PluginComposer
             return false;
         }
 
-        if (options.RequireDependencyMetadata)
+        var depsPath = Path.ChangeExtension(entryPath, ".deps.json");
+        var hasDeps = File.Exists(depsPath);
+
+        if (options.RequireDependencyMetadata && !hasDeps)
         {
-            var depsPath = Path.ChangeExtension(entryPath, ".deps.json");
-            if (!File.Exists(depsPath))
-            {
-                diagnostics.Add(new PluginDiagnostic(
-                    PluginDiagnosticCode.MissingDependencyMetadata,
-                    "The plugin does not include a .deps.json file next to its entry assembly.",
-                    manifest.Id,
-                    pluginDirectory));
-                return false;
-            }
+            diagnostics.Add(new PluginDiagnostic(
+                PluginDiagnosticCode.MissingDependencyMetadata,
+                "The plugin does not include a .deps.json file next to its entry assembly.",
+                manifest.Id,
+                pluginDirectory));
+            return false;
         }
 
-        var checksumDiagnostic = PluginChecksum.Validate(
-            entryPath,
-            manifest.ChecksumSha256,
-            manifest.Id,
-            pluginDirectory);
+        if (hasDeps && !PluginDependencyMetadata.IsUsable(depsPath, out var depsReason))
+        {
+            diagnostics.Add(new PluginDiagnostic(
+                PluginDiagnosticCode.MalformedDependencyMetadata,
+                string.Format(
+                    CultureInfo.InvariantCulture,
+                    "The plugin's .deps.json {0}.",
+                    depsReason),
+                manifest.Id,
+                pluginDirectory));
+            return false;
+        }
+
+        PluginDiagnostic? checksumDiagnostic;
+        try
+        {
+            checksumDiagnostic = PluginChecksum.Validate(
+                entryPath,
+                manifest.ChecksumSha256,
+                manifest.Id,
+                pluginDirectory);
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+        {
+            innerExceptions.Add(exception);
+            checksumDiagnostic = new PluginDiagnostic(
+                PluginDiagnosticCode.PluginDirectoryUnreadable,
+                string.Format(
+                    CultureInfo.InvariantCulture,
+                    "The entry assembly could not be read for checksum validation ({0}).",
+                    exception.GetType().Name),
+                manifest.Id,
+                pluginDirectory);
+        }
+
         if (checksumDiagnostic is not null)
         {
             diagnostics.Add(checksumDiagnostic);
@@ -218,7 +295,7 @@ internal static class PluginComposer
             manifest.ContractVersion,
             capabilities,
             pluginDirectory,
-            Path.GetFileName(entryPath));
+            Path.GetRelativePath(pluginDirectory, entryPath));
 
         var context = new PluginContext(
             manifest.Id,
@@ -385,7 +462,21 @@ internal static class PluginComposer
             return false;
         }
 
-        var resolved = Path.GetFullPath(Path.Combine(pluginDirectory, manifest.EntryAssembly));
+        string resolved;
+        try
+        {
+            resolved = Path.GetFullPath(Path.Combine(pluginDirectory, manifest.EntryAssembly));
+        }
+        catch (ArgumentException)
+        {
+            diagnostics.Add(new PluginDiagnostic(
+                PluginDiagnosticCode.MissingEntryAssembly,
+                "The entry assembly path contains characters that are not valid in a path.",
+                manifest.Id,
+                pluginDirectory));
+            return false;
+        }
+
         if (!PluginPathValidator.IsInsideDirectory(resolved, pluginDirectory)
             || !PluginPathValidator.IsInsideDirectory(resolved, pluginRoot))
         {
@@ -555,11 +646,14 @@ internal static class PluginComposer
         return accepted;
     }
 
-    private static void Rollback(IServiceCollection services, int startCount)
+    private static void Restore(IServiceCollection services, ServiceDescriptor[] snapshot)
     {
-        for (var index = services.Count - 1; index >= startCount; index--)
+        // A plugin may replace or remove host registrations before it throws, so the
+        // whole collection is restored rather than only the descriptors it appended.
+        services.Clear();
+        foreach (var descriptor in snapshot)
         {
-            services.RemoveAt(index);
+            services.Add(descriptor);
         }
     }
 

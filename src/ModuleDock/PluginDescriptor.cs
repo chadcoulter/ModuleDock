@@ -1,3 +1,5 @@
+using System.Collections.Frozen;
+
 namespace ModuleDock;
 
 /// <summary>
@@ -13,7 +15,7 @@ public sealed class PluginDescriptor
     /// <param name="contractVersion">Contract version declared by the plugin.</param>
     /// <param name="capabilities">Capabilities advertised by the plugin.</param>
     /// <param name="directory">Plugin directory.</param>
-    /// <param name="entryAssembly">File name of the entry assembly.</param>
+    /// <param name="entryAssembly">Path of the entry assembly, relative to the plugin directory.</param>
     public PluginDescriptor(
         string id,
         string version,
@@ -32,7 +34,7 @@ public sealed class PluginDescriptor
         Id = id;
         Version = version;
         ContractVersion = contractVersion;
-        Capabilities = capabilities;
+        Capabilities = capabilities.ToFrozenSet(StringComparer.OrdinalIgnoreCase);
         Directory = directory;
         EntryAssembly = entryAssembly;
     }
@@ -63,7 +65,7 @@ public sealed class PluginDescriptor
     public string Directory { get; }
 
     /// <summary>
-    /// Gets the file name of the entry assembly.
+    /// Gets the path of the entry assembly, relative to <see cref="Directory"/>.
     /// </summary>
     public string EntryAssembly { get; }
 }

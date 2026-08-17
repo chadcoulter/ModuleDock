@@ -1,3 +1,5 @@
+using System.Collections.Frozen;
+
 namespace ModuleDock;
 
 /// <summary>
@@ -33,7 +35,7 @@ public sealed class PluginContext
         PluginId = pluginId;
         PluginVersion = pluginVersion;
         ContractVersion = contractVersion;
-        Capabilities = capabilities;
+        Capabilities = capabilities.ToFrozenSet(StringComparer.OrdinalIgnoreCase);
         PluginDirectory = pluginDirectory;
     }
 

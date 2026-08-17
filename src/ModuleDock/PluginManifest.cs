@@ -34,7 +34,7 @@ public sealed class PluginManifest
         Version = version;
         EntryAssembly = entryAssembly;
         ContractVersion = contractVersion;
-        Capabilities = capabilities ?? [];
+        Capabilities = capabilities is null ? [] : [.. capabilities];
         ChecksumSha256 = checksumSha256;
     }
 

@@ -40,6 +40,14 @@
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
       <Private>false</Private>
     </ProjectReference>
+    <ProjectReference Include="..\Fixtures\DestructiveRegistrationPlugin\DestructiveRegistrationPlugin.csproj">
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <Private>false</Private>
+    </ProjectReference>
+    <ProjectReference Include="..\Fixtures\PrivateFrameworkPlugin\PrivateFrameworkPlugin.csproj">
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <Private>false</Private>
+    </ProjectReference>
   </ItemGroup>
 
   <ItemGroup>
@@ -65,6 +73,8 @@
       <_PluginToPublish Include="..\Fixtures\NoModulePlugin\NoModulePlugin.csproj" AdditionalProperties="PublishDir=$(_TestPluginsRoot)\NoModulePlugin\" />
       <_PluginToPublish Include="..\Fixtures\ThrowingModulePlugin\ThrowingModulePlugin.csproj" AdditionalProperties="PublishDir=$(_TestPluginsRoot)\ThrowingModulePlugin\" />
       <_PluginToPublish Include="..\Fixtures\RegistrationFailPlugin\RegistrationFailPlugin.csproj" AdditionalProperties="PublishDir=$(_TestPluginsRoot)\RegistrationFailPlugin\" />
+      <_PluginToPublish Include="..\Fixtures\DestructiveRegistrationPlugin\DestructiveRegistrationPlugin.csproj" AdditionalProperties="PublishDir=$(_TestPluginsRoot)\DestructiveRegistrationPlugin\" />
+      <_PluginToPublish Include="..\Fixtures\PrivateFrameworkPlugin\PrivateFrameworkPlugin.csproj" AdditionalProperties="PublishDir=$(_TestPluginsRoot)\PrivateFrameworkPlugin\" />
     </ItemGroup>
     <MSBuild Projects="@(_PluginToPublish)" Targets="Publish" Properties="Configuration=$(Configuration);TargetFramework=$(TargetFramework)" />
   </Target>

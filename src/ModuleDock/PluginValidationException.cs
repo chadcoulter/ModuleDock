@@ -40,6 +40,7 @@ public sealed class PluginValidationException : Exception
     private static string BuildMessage(string message, IReadOnlyList<PluginDiagnostic> diagnostics)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(message);
+        ArgumentNullException.ThrowIfNull(diagnostics);
 
         if (diagnostics.Count == 0)
         {
