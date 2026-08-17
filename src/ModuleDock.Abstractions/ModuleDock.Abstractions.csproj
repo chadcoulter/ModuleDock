@@ -5,7 +5,7 @@
     <PackageId>ModuleDock.Abstractions</PackageId>
     <Title>ModuleDock.Abstractions</Title>
     <Description>Contracts for ModuleDock plugins. Plugin authors reference this package plus the host application's contract assembly; the host uses the ModuleDock package to discover, validate and load plugins.</Description>
-    <PackageTags>dotnet;dotnet-10;csharp;plugins;plugin-architecture;assemblyloadcontext;dependency-injection;extensibility;modularity;generic-host</PackageTags>
+    <PackageTags>plugin;plugins;plugin-contracts;plugin-sdk;plugin-api;plugin-architecture;abstractions;contracts;module;modules;modular;modularity;extensibility;extensible;addin;add-in;assemblyloadcontext;dependency-injection;ioc;generic-host;hosting;dotnet;dotnet-10;net10;csharp</PackageTags>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageIcon>icon.png</PackageIcon>
     <EnablePackageValidation>true</EnablePackageValidation>

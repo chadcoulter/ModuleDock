@@ -5,7 +5,7 @@
     <PackageId>ModuleDock</PackageId>
     <Title>ModuleDock</Title>
     <Description>Manifest-driven plugin hosting, validation and dependency isolation for .NET 10 Generic Host applications. Discovers per-plugin directories, validates plugin.json, loads each plugin into its own AssemblyLoadContext, and registers services before the host is built.</Description>
-    <PackageTags>dotnet;dotnet-10;csharp;plugins;plugin-architecture;assemblyloadcontext;dependency-injection;extensibility;modularity;generic-host</PackageTags>
+    <PackageTags>plugin;plugins;plugin-host;plugin-system;plugin-loader;plugin-framework;plugin-architecture;module;modules;modular;modularity;extensibility;extensible;addin;add-in;assemblyloadcontext;assembly-loading;dynamic-loading;dependency-isolation;dependency-injection;ioc;generic-host;hosting;aspnetcore;dotnet;dotnet-10;net10;csharp</PackageTags>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageIcon>icon.png</PackageIcon>
     <EnablePackageValidation>true</EnablePackageValidation>
