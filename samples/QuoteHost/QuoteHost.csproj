@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup>
+    <RootNamespace>QuoteHost</RootNamespace>
+    <AssemblyName>QuoteHost</AssemblyName>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
+    <PublishAot>false</PublishAot>
+    <PublishTrimmed>false</PublishTrimmed>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\ModuleDock\ModuleDock.csproj" />
+    <ProjectReference Include="..\QuoteHost.Contracts\QuoteHost.Contracts.csproj" />
+  </ItemGroup>
+  <Target Name="DeployMarinePlugin" AfterTargets="Build">
+    <PropertyGroup>
+      <MarinePluginPublishDir>$(MSBuildProjectDirectory)\plugins\marine-rating\</MarinePluginPublishDir>
+    </PropertyGroup>
+    <MSBuild
+      Projects="..\Plugins\MarineRating.Plugin\MarineRating.Plugin.csproj"
+      Targets="Publish"
+      Properties="Configuration=$(Configuration);TargetFramework=$(TargetFramework);PublishDir=$(MarinePluginPublishDir)" />
+  </Target>
+</Project>

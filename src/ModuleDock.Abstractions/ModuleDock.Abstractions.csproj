@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <IsPackable>true</IsPackable>
+    <PackageId>ModuleDock.Abstractions</PackageId>
+    <Title>ModuleDock.Abstractions</Title>
+    <Description>Contracts for ModuleDock plugins. Plugin authors reference this package plus the host application's contract assembly; the host uses the ModuleDock package to discover, validate and load plugins.</Description>
+    <PackageTags>dotnet;dotnet-10;csharp;plugins;plugin-architecture;assemblyloadcontext;dependency-injection;extensibility;modularity;generic-host</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageIcon>icon.png</PackageIcon>
+    <EnablePackageValidation>true</EnablePackageValidation>
+    <RootNamespace>ModuleDock</RootNamespace>
+    <AssemblyName>ModuleDock.Abstractions</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="../../README.md" Pack="true" PackagePath="\" />
+    <None Include="../../icon.png" Pack="true" PackagePath="\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
+  </ItemGroup>
+
+</Project>

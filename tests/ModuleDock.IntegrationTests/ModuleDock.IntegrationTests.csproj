@@ -1,0 +1,72 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <IsTestProject>true</IsTestProject>
+    <RootNamespace>ModuleDock.IntegrationTests</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\ModuleDock\ModuleDock.csproj" />
+    <ProjectReference Include="..\Fixtures\ModuleDock.TestContracts\ModuleDock.TestContracts.csproj" />
+    <ProjectReference Include="..\Fixtures\ValidPlugin\ValidPlugin.csproj">
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <Private>false</Private>
+    </ProjectReference>
+    <ProjectReference Include="..\Fixtures\ConflictingPlugin\ConflictingPlugin.csproj">
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <Private>false</Private>
+    </ProjectReference>
+    <ProjectReference Include="..\Fixtures\VersionOnePlugin\VersionOnePlugin.csproj">
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <Private>false</Private>
+    </ProjectReference>
+    <ProjectReference Include="..\Fixtures\VersionTwoPlugin\VersionTwoPlugin.csproj">
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <Private>false</Private>
+    </ProjectReference>
+    <ProjectReference Include="..\Fixtures\MultiModulePlugin\MultiModulePlugin.csproj">
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <Private>false</Private>
+    </ProjectReference>
+    <ProjectReference Include="..\Fixtures\NoModulePlugin\NoModulePlugin.csproj">
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <Private>false</Private>
+    </ProjectReference>
+    <ProjectReference Include="..\Fixtures\ThrowingModulePlugin\ThrowingModulePlugin.csproj">
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <Private>false</Private>
+    </ProjectReference>
+    <ProjectReference Include="..\Fixtures\RegistrationFailPlugin\RegistrationFailPlugin.csproj">
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <Private>false</Private>
+    </ProjectReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="coverlet.collector" />
+    <PackageReference Include="FluentAssertions" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+  </ItemGroup>
+
+  <Target Name="PublishTestPlugins" AfterTargets="Build">
+    <PropertyGroup>
+      <_TestPluginsRoot>$([System.IO.Path]::GetFullPath('$(MSBuildProjectDirectory)\$(OutputPath)testplugins'))</_TestPluginsRoot>
+    </PropertyGroup>
+    <ItemGroup>
+      <_PluginToPublish Include="..\Fixtures\ValidPlugin\ValidPlugin.csproj" AdditionalProperties="PublishDir=$(_TestPluginsRoot)\ValidPlugin\" />
+      <_PluginToPublish Include="..\Fixtures\ConflictingPlugin\ConflictingPlugin.csproj" AdditionalProperties="PublishDir=$(_TestPluginsRoot)\ConflictingPlugin\" />
+      <_PluginToPublish Include="..\Fixtures\VersionOnePlugin\VersionOnePlugin.csproj" AdditionalProperties="PublishDir=$(_TestPluginsRoot)\VersionOnePlugin\" />
+      <_PluginToPublish Include="..\Fixtures\VersionTwoPlugin\VersionTwoPlugin.csproj" AdditionalProperties="PublishDir=$(_TestPluginsRoot)\VersionTwoPlugin\" />
+      <_PluginToPublish Include="..\Fixtures\MultiModulePlugin\MultiModulePlugin.csproj" AdditionalProperties="PublishDir=$(_TestPluginsRoot)\MultiModulePlugin\" />
+      <_PluginToPublish Include="..\Fixtures\NoModulePlugin\NoModulePlugin.csproj" AdditionalProperties="PublishDir=$(_TestPluginsRoot)\NoModulePlugin\" />
+      <_PluginToPublish Include="..\Fixtures\ThrowingModulePlugin\ThrowingModulePlugin.csproj" AdditionalProperties="PublishDir=$(_TestPluginsRoot)\ThrowingModulePlugin\" />
+      <_PluginToPublish Include="..\Fixtures\RegistrationFailPlugin\RegistrationFailPlugin.csproj" AdditionalProperties="PublishDir=$(_TestPluginsRoot)\RegistrationFailPlugin\" />
+    </ItemGroup>
+    <MSBuild Projects="@(_PluginToPublish)" Targets="Publish" Properties="Configuration=$(Configuration);TargetFramework=$(TargetFramework)" />
+  </Target>
+
+</Project>

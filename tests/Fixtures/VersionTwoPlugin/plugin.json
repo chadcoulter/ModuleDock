@@ -1,0 +1,9 @@
+{
+  "id": "version-two-plugin",
+  "version": "1.0.0",
+  "entryAssembly": "VersionTwoPlugin.dll",
+  "contractVersion": "1.0.0",
+  "capabilities": [
+    "v2-private"
+  ]
+}

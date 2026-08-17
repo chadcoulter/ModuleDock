@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <EnableDynamicLoading>false</EnableDynamicLoading>
+    <RootNamespace>ModuleDock.TestContracts</RootNamespace>
+    <AssemblyName>ModuleDock.TestContracts</AssemblyName>
+  </PropertyGroup>
+</Project>

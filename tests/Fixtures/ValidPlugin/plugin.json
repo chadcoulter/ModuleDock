@@ -1,0 +1,9 @@
+{
+  "id": "valid-plugin",
+  "version": "1.0.0",
+  "entryAssembly": "ValidPlugin.dll",
+  "contractVersion": "1.0.0",
+  "capabilities": [
+    "valid"
+  ]
+}

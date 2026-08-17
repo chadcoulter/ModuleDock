@@ -1,0 +1,35 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <IsPackable>true</IsPackable>
+    <PackageId>ModuleDock</PackageId>
+    <Title>ModuleDock</Title>
+    <Description>Manifest-driven plugin hosting, validation and dependency isolation for .NET 10 Generic Host applications. Discovers per-plugin directories, validates plugin.json, loads each plugin into its own AssemblyLoadContext, and registers services before the host is built.</Description>
+    <PackageTags>dotnet;dotnet-10;csharp;plugins;plugin-architecture;assemblyloadcontext;dependency-injection;extensibility;modularity;generic-host</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageIcon>icon.png</PackageIcon>
+    <EnablePackageValidation>true</EnablePackageValidation>
+    <RootNamespace>ModuleDock</RootNamespace>
+    <AssemblyName>ModuleDock</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="../../README.md" Pack="true" PackagePath="\" />
+    <None Include="../../icon.png" Pack="true" PackagePath="\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../ModuleDock.Abstractions/ModuleDock.Abstractions.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="ModuleDock.Tests" />
+    <InternalsVisibleTo Include="ModuleDock.IntegrationTests" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,28 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/ModuleDock.Abstractions/ModuleDock.Abstractions.csproj" />
+    <Project Path="src/ModuleDock/ModuleDock.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/ModuleDock.Tests/ModuleDock.Tests.csproj" />
+    <Project Path="tests/ModuleDock.IntegrationTests/ModuleDock.IntegrationTests.csproj" />
+  </Folder>
+  <Folder Name="/tests/Fixtures/">
+    <Project Path="tests/Fixtures/ModuleDock.TestContracts/ModuleDock.TestContracts.csproj" />
+    <Project Path="tests/Fixtures/ValidPlugin/ValidPlugin.csproj" />
+    <Project Path="tests/Fixtures/ConflictingPlugin/ConflictingPlugin.csproj" />
+    <Project Path="tests/Fixtures/PrivateDependency.V1/PrivateDependency.V1.csproj" />
+    <Project Path="tests/Fixtures/PrivateDependency.V2/PrivateDependency.V2.csproj" />
+    <Project Path="tests/Fixtures/VersionOnePlugin/VersionOnePlugin.csproj" />
+    <Project Path="tests/Fixtures/VersionTwoPlugin/VersionTwoPlugin.csproj" />
+    <Project Path="tests/Fixtures/MultiModulePlugin/MultiModulePlugin.csproj" />
+    <Project Path="tests/Fixtures/NoModulePlugin/NoModulePlugin.csproj" />
+    <Project Path="tests/Fixtures/ThrowingModulePlugin/ThrowingModulePlugin.csproj" />
+    <Project Path="tests/Fixtures/RegistrationFailPlugin/RegistrationFailPlugin.csproj" />
+  </Folder>
+  <Folder Name="/samples/">
+    <Project Path="samples/QuoteHost/QuoteHost.csproj" />
+    <Project Path="samples/QuoteHost.Contracts/QuoteHost.Contracts.csproj" />
+    <Project Path="samples/Plugins/MarineRating.Plugin/MarineRating.Plugin.csproj" />
+  </Folder>
+</Solution>

@@ -1,0 +1,9 @@
+{
+  "id": "marine-rating",
+  "version": "1.0.0",
+  "entryAssembly": "MarineRating.Plugin.dll",
+  "contractVersion": "1.0.0",
+  "capabilities": [
+    "marine"
+  ]
+}

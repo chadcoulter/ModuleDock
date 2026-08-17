@@ -1,0 +1,9 @@
+{
+  "id": "registration-fail-plugin",
+  "version": "1.0.0",
+  "entryAssembly": "RegistrationFailPlugin.dll",
+  "contractVersion": "1.0.0",
+  "capabilities": [
+    "registration-fail"
+  ]
+}

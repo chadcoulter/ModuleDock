@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 620" role="img" aria-labelledby="title desc">
+  <title id="title">ModuleDock load sequence</title>
+  <desc id="desc">Plugins are discovered from per-plugin directories, validated, loaded into isolated contexts, and registered into IServiceCollection before the host is built.</desc>
+  <rect width="960" height="620" fill="#0b1f3a"/>
+  <text x="48" y="48" fill="#e8f1fb" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="28" font-weight="700">Plugin loading sequence</text>
+  <text x="48" y="78" fill="#9db4cc" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="14">Everything happens before builder.Build()</text>
+
+  <g font-family="Segoe UI, Helvetica, Arial, sans-serif">
+    <rect x="48" y="110" width="864" height="56" rx="10" fill="#1c3c63"/>
+    <text x="72" y="144" fill="#3db9f0" font-size="16" font-weight="700">1. Discover</text>
+    <text x="190" y="144" fill="#e8f1fb" font-size="15">Enumerate plugin directories and read each plugin.json</text>
+
+    <rect x="48" y="180" width="864" height="56" rx="10" fill="#1c3c63"/>
+    <text x="72" y="214" fill="#3db9f0" font-size="16" font-weight="700">2. Validate</text>
+    <text x="190" y="214" fill="#e8f1fb" font-size="15">IDs, versions, contract compatibility, paths, checksums, .deps.json</text>
+
+    <rect x="48" y="250" width="864" height="56" rx="10" fill="#1c3c63"/>
+    <text x="72" y="284" fill="#3db9f0" font-size="16" font-weight="700">3. Isolate</text>
+    <text x="190" y="284" fill="#e8f1fb" font-size="15">Create one collectible AssemblyLoadContext per plugin</text>
+
+    <rect x="48" y="320" width="864" height="56" rx="10" fill="#1c3c63"/>
+    <text x="72" y="354" fill="#3db9f0" font-size="16" font-weight="700">4. Resolve</text>
+    <text x="190" y="354" fill="#e8f1fb" font-size="15">Share host contracts; resolve private assemblies through AssemblyDependencyResolver</text>
+
+    <rect x="48" y="390" width="864" height="56" rx="10" fill="#1c3c63"/>
+    <text x="72" y="424" fill="#3db9f0" font-size="16" font-weight="700">5. Compose</text>
+    <text x="190" y="424" fill="#e8f1fb" font-size="15">Construct the single IPluginModule and call ConfigureServices</text>
+
+    <rect x="48" y="460" width="864" height="56" rx="10" fill="#1c3c63"/>
+    <text x="72" y="494" fill="#3db9f0" font-size="16" font-weight="700">6. Catalogue</text>
+    <text x="190" y="494" fill="#e8f1fb" font-size="15">Register an immutable IPluginCatalog and PluginLoadReport</text>
+
+    <rect x="48" y="530" width="864" height="56" rx="10" fill="#132a4a" stroke="#2ec4b6" stroke-width="2"/>
+    <text x="72" y="564" fill="#2ec4b6" font-size="16" font-weight="700">7. Build</text>
+    <text x="190" y="564" fill="#e8f1fb" font-size="15">builder.Build() creates the root service provider. Restart to upgrade plugins.</text>
+  </g>
+</svg>

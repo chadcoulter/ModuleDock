@@ -1,0 +1,121 @@
+name: ci
+
+on:
+  push:
+    branches: [main, master]
+    tags: ['v*']
+  pull_request:
+    branches: [main, master]
+
+permissions:
+  contents: read
+
+env:
+  CI: "true"
+  DOTNET_NOLOGO: "true"
+  DOTNET_CLI_TELEMETRY_OPTOUT: "true"
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: "true"
+
+jobs:
+  build:
+    name: Build & Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restore
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build --configuration Release --no-restore
+
+      - name: Test
+        run: dotnet test --configuration Release --no-build --verbosity normal
+
+      - name: Pack
+        run: |
+          dotnet pack src/ModuleDock.Abstractions/ModuleDock.Abstractions.csproj --configuration Release --no-build --output artifacts/packages
+          dotnet pack src/ModuleDock/ModuleDock.csproj --configuration Release --no-build --output artifacts/packages
+
+  publish:
+    name: Publish to NuGet
+    needs: build
+    if: github.ref_type == 'tag' && startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      id-token: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Validate tag and derive version
+        id: version
+        run: |
+          TAG="${GITHUB_REF_NAME#v}"
+          if [[ ! "$TAG" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?(\+[0-9A-Za-z.-]+)?$ ]]; then
+            echo "Tag 'v${TAG}' is not a valid semantic version."
+            exit 1
+          fi
+          echo "version=${TAG}" >> "$GITHUB_OUTPUT"
+
+      - name: Restore
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build --configuration Release --no-restore -p:PackageVersion=${{ steps.version.outputs.version }} -p:Version=${{ steps.version.outputs.version }}
+
+      - name: Test
+        run: dotnet test --configuration Release --no-build
+
+      - name: Pack
+        run: |
+          dotnet pack src/ModuleDock.Abstractions/ModuleDock.Abstractions.csproj \
+            --configuration Release --no-build \
+            -p:PackageVersion=${{ steps.version.outputs.version }} \
+            -p:Version=${{ steps.version.outputs.version }} \
+            --output artifacts/packages
+          dotnet pack src/ModuleDock/ModuleDock.csproj \
+            --configuration Release --no-build \
+            -p:PackageVersion=${{ steps.version.outputs.version }} \
+            -p:Version=${{ steps.version.outputs.version }} \
+            --output artifacts/packages
+
+      - name: NuGet login (trusted publishing)
+        uses: NuGet/login@v1
+        id: login
+        with:
+          user: ${{ secrets.NUGET_USER }}
+
+      - name: Push packages to NuGet.org
+        run: >
+          dotnet nuget push "artifacts/packages/*.nupkg"
+          --api-key "${{ steps.login.outputs.NUGET_API_KEY }}"
+          --source https://api.nuget.org/v3/index.json
+          --skip-duplicate
+
+      - name: Push symbol packages to NuGet.org
+        run: >
+          dotnet nuget push "artifacts/packages/*.snupkg"
+          --api-key "${{ steps.login.outputs.NUGET_API_KEY }}"
+          --source https://api.nuget.org/v3/index.json
+          --skip-duplicate
+
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          files: |
+            artifacts/packages/*.nupkg
+            artifacts/packages/*.snupkg

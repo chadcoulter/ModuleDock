@@ -1,0 +1,9 @@
+{
+  "id": "throwing-module-plugin",
+  "version": "1.0.0",
+  "entryAssembly": "ThrowingModulePlugin.dll",
+  "contractVersion": "1.0.0",
+  "capabilities": [
+    "throwing"
+  ]
+}
