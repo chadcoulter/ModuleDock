@@ -1,0 +1,45 @@
+name: AI Contract Check
+
+on:
+  pull_request:
+    paths:
+      - ".ai/**"
+      - "scripts/**"
+      - ".github/workflows/ai-contract-check.yml"
+  workflow_dispatch:
+    inputs:
+      task_file:
+        description: "Path to AI task JSON"
+        required: false
+        default: ".ai/task.json"
+      response_file:
+        description: "Path to AI response JSON"
+        required: false
+        default: ".ai/response.json"
+
+jobs:
+  validate-ai-contract:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Validate AI task payload
+        env:
+          AI_TASK_FILE: ${{ github.event.inputs.task_file || '.ai/task.json' }}
+        run: npm run validate:ai-task
+
+      - name: Validate AI response payload
+        env:
+          AI_RESPONSE_FILE: ${{ github.event.inputs.response_file || '.ai/response.json' }}
+        run: npm run validate:ai-response

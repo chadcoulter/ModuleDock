@@ -1,0 +1,222 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/no-discovery-agent-task.schema.json",
+  "title": "No-Discovery Agent Task Input",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "task",
+    "allowed_files",
+    "contracts",
+    "acceptance_criteria",
+    "output_schema_version"
+  ],
+  "properties": {
+    "task": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Single, explicit implementation goal."
+    },
+    "constraints": {
+      "type": "array",
+      "description": "Optional additional constraints. Core no-discovery constraints are enforced externally/system prompt.",
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "allowed_files": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["path", "purpose", "edit_mode"],
+        "properties": {
+          "path": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^(?!/)(?!.*\\.\\.)[\\w./-]+$",
+            "description": "Repo-relative path; no absolute paths; no '..'."
+          },
+          "purpose": {
+            "type": "string",
+            "minLength": 1
+          },
+          "edit_mode": {
+            "type": "string",
+            "enum": ["replace_section", "append", "create"]
+          },
+          "must_exist": {
+            "type": "boolean",
+            "default": true
+          }
+        }
+      },
+      "uniqueItems": true
+    },
+    "edit_anchors": {
+      "type": "array",
+      "description": "Required for replace_section edits. One or more anchored regions per file.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["path", "begin", "end"],
+        "properties": {
+          "path": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^(?!/)(?!.*\\.\\.)[\\w./-]+$"
+          },
+          "begin": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Literal begin marker, e.g. <AI:BEGIN:FOO>"
+          },
+          "end": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Literal end marker, e.g. <AI:END:FOO>"
+          }
+        }
+      }
+    },
+    "contracts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["interfaces"],
+      "properties": {
+        "interfaces": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["name", "signature", "semantics"],
+            "properties": {
+              "name": { "type": "string", "minLength": 1 },
+              "signature": { "type": "string", "minLength": 1 },
+              "semantics": { "type": "string", "minLength": 1 }
+            }
+          }
+        },
+        "types": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["name", "definition"],
+            "properties": {
+              "name": { "type": "string", "minLength": 1 },
+              "definition": { "type": "string", "minLength": 1 }
+            }
+          }
+        },
+        "api_routes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["method", "path", "behavior"],
+            "properties": {
+              "method": {
+                "type": "string",
+                "enum": ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "HEAD"]
+              },
+              "path": { "type": "string", "minLength": 1 },
+              "behavior": { "type": "string", "minLength": 1 }
+            }
+          }
+        },
+        "env_vars": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["name", "required", "description"],
+            "properties": {
+              "name": {
+                "type": "string",
+                "pattern": "^[A-Z][A-Z0-9_]*$"
+              },
+              "required": { "type": "boolean" },
+              "description": { "type": "string", "minLength": 1 }
+            }
+          }
+        },
+        "error_semantics": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "examples": {
+      "type": "array",
+      "minItems": 1,
+      "description": "Concrete input/output examples.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["input", "output"],
+        "properties": {
+          "input": { "type": "string", "minLength": 1 },
+          "output": { "type": "string", "minLength": 1 },
+          "notes": { "type": "string" }
+        }
+      }
+    },
+    "test_targets": {
+      "type": "array",
+      "description": "Exact test files the agent may update.",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "pattern": "^(?!/)(?!.*\\.\\.)[\\w./-]+$"
+      },
+      "uniqueItems": true
+    },
+    "acceptance_criteria": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "disallowed_paths": {
+      "type": "array",
+      "description": "Optional explicit deny-list.",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "pattern": "^(?!/)(?!.*\\.\\.)[\\w./-]+$"
+      }
+    },
+    "output_schema_version": {
+      "type": "string",
+      "const": "1.0.0"
+    },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "ticket": { "type": "string" },
+        "owner": { "type": "string" },
+        "priority": { "type": "string", "enum": ["low", "medium", "high", "urgent"] }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "allowed_files": {
+            "contains": {
+              "type": "object",
+              "properties": { "edit_mode": { "const": "replace_section" } },
+              "required": ["edit_mode"]
+            }
+          }
+        },
+        "required": ["allowed_files"]
+      },
+      "then": {
+        "required": ["edit_anchors"]
+      }
+    }
+  ]
+}
