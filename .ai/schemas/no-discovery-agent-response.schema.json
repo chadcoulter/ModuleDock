@@ -1,0 +1,83 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/no-discovery-agent-response.schema.json",
+  "title": "No-Discovery Agent Response",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "status",
+    "files_changed",
+    "diffs",
+    "verification",
+    "assumptions"
+  ],
+  "properties": {
+    "status": {
+      "type": "string",
+      "enum": ["DONE", "BLOCKED"]
+    },
+    "missing": {
+      "type": "array",
+      "description": "Required when status=BLOCKED; list of missing info/artifacts.",
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "files_changed": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "uniqueItems": true
+    },
+    "diffs": {
+      "type": "array",
+      "description": "Unified diffs, one entry per changed file.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["path", "unified_diff"],
+        "properties": {
+          "path": { "type": "string", "minLength": 1 },
+          "unified_diff": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^(--- |diff --git )"
+          }
+        }
+      }
+    },
+    "verification": {
+      "type": "array",
+      "description": "One item per acceptance criterion.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["criterion", "result", "evidence"],
+        "properties": {
+          "criterion": { "type": "string", "minLength": 1 },
+          "result": { "type": "string", "enum": ["pass", "fail", "not_applicable"] },
+          "evidence": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "assumptions": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": { "status": { "const": "BLOCKED" } },
+        "required": ["status"]
+      },
+      "then": {
+        "required": ["missing"],
+        "properties": {
+          "files_changed": { "maxItems": 0 },
+          "diffs": { "maxItems": 0 }
+        }
+      }
+    }
+  ]
+}
